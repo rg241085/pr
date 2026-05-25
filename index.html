@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Payment Reminder Tool - Dryfu</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+    <div id="firebaseAuthGateway"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f6f8; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 15px;">
+        <div
+            style="background: #fff; padding: 30px; border-radius: 10px; width: 100%; max-width: 360px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h2 style="color: #0b79d0; margin-bottom: 5px;">Dryfu Admin Login</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">कृपया अपना ईमेल और पासवर्ड दर्ज करें</p>
+
+            <input type="email" id="authEmail" placeholder="Email ID"
+                style="padding: 12px; width: 100%; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; margin-bottom: 10px; outline: none;">
+            <input type="password" id="authPassword" placeholder="Password"
+                style="padding: 12px; width: 100%; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; margin-bottom: 15px; outline: none;">
+
+            <button id="loginBtn" onclick="loginFirebase()"
+                style="width: 100%; padding: 12px; background: #0b79d0; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;">Login
+                🔐</button>
+
+            <div id="authError"
+                style="color: red; font-size: 14px; margin-top: 10px; font-weight: bold; display: none;">❌ ईमेल या
+                पासवर्ड गलत है!</div>
+        </div>
+    </div>
+    <div id="customPrompt">
+        <div class="modal-content">
+            <h3 id="promptTitle">Enter Mobile Number</h3>
+            <input type="tel" id="promptInput" placeholder="10 Digit Number" maxlength="10" autocomplete="off">
+            <button id="promptContactBtn" class="btn-contact" style="display:none;">📞 Select from Contacts</button>
+            <div class="modal-buttons">
+                <button id="promptCancel" class="btn-danger">Cancel</button>
+                <button id="promptSave">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav" style="align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <a id="nav-reminder" class="active" onclick="showPage('reminder')">Pending Reminders</a>
+            <a id="nav-master" onclick="showPage('master')">Mobile Master</a>
+            <a id="nav-storage" onclick="showPage('storage')">Cloud Storage ☁️</a>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <label class="btn-send-broker"
+                style="cursor: pointer; margin: 0; font-size: 14px; padding: 10px 15px; border-radius: 6px;">
+                📁 Upload PDF
+                <input type="file" id="pdfInput" accept="application/pdf" style="display: none;">
+            </label>
+
+            <label class="btn-send-party"
+                style="cursor: pointer; margin: 0; font-size: 14px; padding: 10px 15px; border-radius: 6px;">
+                📊 Upload CSV
+                <input type="file" id="fileInput" accept=".csv" style="display: none;">
+            </label>
+
+            <button class="btn-toggle"
+                style="margin: 0; background: #ff9800; color: white; border: none; font-weight: bold; font-size: 14px; padding: 10px 15px; border-radius: 6px;"
+                onclick="regenerateLinks()">🔄 Sync Links</button>
+            <button class="btn-toggle"
+                style="margin: 0; background: #607d8b; color: white; border: none; font-weight: bold; font-size: 14px; padding: 10px 15px; border-radius: 6px;"
+                onclick="cleanTempBills()">🧹 Clean Temp Bills</button>
+            <button class="btn-danger" style="margin: 0; font-size: 14px; padding: 10px 15px; border-radius: 6px;"
+                onclick="clearFirebaseData()">🗑️ Clear Data</button>
+            <button class="btn-danger" style="margin: 0; font-size: 14px; padding: 10px 15px; border-radius: 6px;"
+                onclick="logoutFirebase()">🚪 Logout</button>
+        </div>
+    </div>
+
+    <div id="pdfStatus"
+        style="text-align: right; font-weight: bold; color: #128C7E; font-size: 14px; margin-top: -10px; margin-bottom: 10px; min-height: 20px;">
+    </div>
+
+    <div id="reminderPage">
+        <input type="text" id="searchBox" placeholder="🔍 Search Party Name..." onkeyup="filterTable()">
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Party</th>
+                    <th>Selected Bills</th>
+                    <th>Total Amount</th>
+                    <th>Broker</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div id="masterPage" style="display:none">
+        <div class="master-grid">
+            <div class="master-column">
+                <h3>Party Mobile Master</h3>
+                <table id="partyTable">
+                    <thead>
+                        <tr>
+                            <th>Party</th>
+                            <th>Mobile</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="master-column">
+                <h3>Broker Mobile Master</h3>
+                <table id="brokerTable">
+                    <thead>
+                        <tr>
+                            <th>Broker</th>
+                            <th>Mobile</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="storagePage" style="display:none; margin-top: -10px;">
+
+        <div
+            style="background: #0b79d0; padding: 12px 15px; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <label
+                    style="color: white; font-weight: bold; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 15px;">
+                    <input type="checkbox" id="selectAllStorage" onclick="toggleAllStorage()"
+                        style="width:20px; height:20px; cursor:pointer; margin:0;">
+                    Select All
+                </label>
+                <span id="totalBillsCount"
+                    style="background: #ffffff; color: #0b79d0; padding: 5px 12px; border-radius: 15px; font-size: 13px; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">Total:
+                    0</span>
+            </div>
+
+            <div
+                style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end;">
+                <input type="text" id="storageSearchBox" placeholder="🔍 Search Bill..."
+                    onkeyup="filterAndSortStorage()" onclick="event.stopPropagation()"
+                    style="padding: 8px 15px; border: none; border-radius: 6px; font-size: 14px; width: 100%; max-width: 220px; outline: none; margin: 0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+                <button id="btnSelectDuplicates" onclick="selectOldDuplicates()"
+                    style="display:none; background:#ffc107; color:#333; font-weight:bold; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-size:13px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">⚠️
+                    Select Duplicates</button>
+                <button id="bulkShareBtn" onclick="shareSelectedCloudFiles()"
+                    style="display:none; padding:8px 15px; border-radius:6px; font-size:13px; font-weight:bold; border:none; color:white; background:#25D366; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">💬
+                    Share</button>
+                <button id="bulkDeleteBtn" onclick="deleteSelectedCloudFiles()"
+                    style="display:none; padding:8px 15px; border-radius:6px; font-size:13px; font-weight:bold; border:none; color:white; background:#d9534f; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🗑️
+                    Delete</button>
+            </div>
+
+        </div>
+
+        <table
+            style="margin-top: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 0 0 8px 8px; overflow: hidden; border-collapse: separate; border-spacing: 0;">
+            <thead style="background: #e9f2fa; color: #333;">
+                <tr>
+                    <th style="width: 40px; text-align: center; padding: 12px; border-bottom: 2px solid #0b79d0;">#</th>
+                    <th onclick="handleSort('name')"
+                        style="cursor: pointer; user-select: none; padding: 12px; border-bottom: 2px solid #0b79d0; font-size: 15px;"
+                        title="Click to Sort by Name">
+                        Bill No. & Date <span id="sortNameIcon" style="font-size:12px;">↕️</span>
+                    </th>
+                    <th onclick="handleSort('date')"
+                        style="cursor: pointer; user-select: none; white-space: nowrap; padding: 12px; border-bottom: 2px solid #0b79d0; font-size: 15px;"
+                        title="Click to Sort by Date">
+                        Upload Date & Time <span id="sortDateIcon" style="font-size:12px;">⬇️</span>
+                    </th>
+                    <th style="width: 130px; text-align: center; padding: 12px; border-bottom: 2px solid #0b79d0;">View
+                        & Share</th>
+                    <th style="width: 80px; text-align: center; padding: 12px; border-bottom: 2px solid #0b79d0;">Action
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="storageTableBody">
+                <tr>
+                    <td colspan='5' style='text-align:center;'>Click "Refresh List" to load files from Cloud.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
