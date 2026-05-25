@@ -346,17 +346,28 @@ function renderTable() {
         tr.setAttribute("data-party", item.party);
         tr.setAttribute("data-key", safeKey);
 
+
         let toggleBtn = document.createElement("button");
         toggleBtn.textContent = "▼ Show Bills";
         toggleBtn.className = "btn-toggle";
         toggleBtn.onclick = function () {
-            let subRow = document.getElementById("subrow-" + safeKey);
-            if (subRow.style.display === "none" || subRow.style.display === "") {
-                subRow.style.display = "block"; toggleBtn.textContent = "▲ Hide Bills";
+            let innerDiv = document.getElementById("subrow-" + safeKey);
+            let mainTr = document.getElementById("trsub-" + safeKey); // 🌟 NAYA: बाहर वाली लाइन (Row) को भी पकड़ें
+
+            if (innerDiv.style.display === "none" || innerDiv.style.display === "") {
+                innerDiv.style.display = "block";
+                if (mainTr) mainTr.style.display = ""; // 🌟 लाइन को स्क्रीन पर दिखाएं
+                toggleBtn.textContent = "▲ Hide Bills";
             } else {
-                subRow.style.display = "none"; toggleBtn.textContent = "▼ Show Bills";
+                innerDiv.style.display = "none";
+                if (mainTr) mainTr.style.display = "none"; // 🌟 लाइन को वापस छिपाएं ताकि खाली जगह न बचे
+                toggleBtn.textContent = "▼ Show Bills";
             }
         };
+
+
+
+
 
         let pbtn = document.createElement("button");
         pbtn.textContent = "Party 💬";
