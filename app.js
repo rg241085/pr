@@ -43,8 +43,9 @@ window.escapeHtml = function (str) {
 };
 
 window.showPage = function (p) {
-    document.getElementById("reminderPage").style.display = p === "reminder" ? "block" : "none";
-    document.getElementById("masterPage").style.display = p === "master" ? "block" : "none";
+    localStorage.setItem("lastActivePage", p); // 🌟 NAYA CODE: ब्राउज़र को याद रखने के लिए कहें
+
+    document.getElementById("reminderPage").style.display = p === "reminder" ? "block" : "none"; document.getElementById("masterPage").style.display = p === "master" ? "block" : "none";
     document.getElementById("storagePage").style.display = p === "storage" ? "block" : "none";
 
     document.getElementById("nav-reminder").classList.toggle("active", p === "reminder");
@@ -124,7 +125,11 @@ document.getElementById('pdfInput').addEventListener('change', async (e) => {
 
             let uploadTask = (async () => {
                 const fileRef = storageRef(storage, `bills/Bill_${fileKey}.pdf`);
-                await uploadBytes(fileRef, pdfBytes);
+
+                // 🌟 NAYA CODE: Firebase को बताएं कि यह PDF है, ताकि वो ब्राउज़र में ही खुले
+                const metadata = { contentType: 'application/pdf' };
+                await uploadBytes(fileRef, pdfBytes, metadata);
+
                 const downloadURL = await getDownloadURL(fileRef);
                 newLinks[fileKey] = downloadURL;
                 uploadedCount++;
@@ -1030,7 +1035,10 @@ window.shareSelectedCloudFiles = async function () {
             const mergedFileRef = storageRef(storage, `merged_bills/${mergedFileName}`);
 
             btn.innerHTML = "⏳ Uploading...";
-            await uploadBytes(mergedFileRef, mergedPdfBytes);
+            // 🌟 NAYA CODE: मर्ज की गई फाइल को भी PDF के रूप में सेट करें
+            const metadata = { contentType: 'application/pdf' };
+            await uploadBytes(mergedFileRef, mergedPdfBytes, metadata);
+
             const mergedUrl = await getDownloadURL(mergedFileRef);
 
             let billsListText = billNumbers.join(", ");
@@ -1123,6 +1131,10 @@ onAuthStateChanged(auth, (user) => {
         // अगर सही यूज़र है तो स्क्रीन हटाकर डेटा लोड करो
         if (gateway) gateway.style.display = "none";
         loadData();
+
+        // 🌟 NAYA CODE: जो पेज आख़िरी बार खुला था, वापस उसी को खोलें
+        let lastPage = localStorage.getItem("lastActivePage") || "reminder";
+        showPage(lastPage);
     } else {
         // अगर Logout हो गया है तो वापस लॉक स्क्रीन दिखाओ
         if (gateway) gateway.style.display = "flex";
