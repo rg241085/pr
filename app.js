@@ -220,29 +220,19 @@ window.askMobileNumber = function (titleText, defaultVal = "") {
         let title = document.getElementById('promptTitle');
         let input = document.getElementById('promptInput');
         let contactBtn = document.getElementById('promptContactBtn');
+        let saveBtn = document.getElementById('promptSave');
 
         title.innerText = titleText;
         input.value = defaultVal;
         modal.style.display = 'flex';
         input.focus();
 
-        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        if (isMobile) {
-            contactBtn.style.display = 'block';
-            contactBtn.onclick = async () => {
-                if (!('contacts' in navigator)) { alert("आपके ब्राउज़र में कांटेक्ट पढ़ने का फीचर ब्लॉक है!"); return; }
-                try {
-                    const contacts = await navigator.contacts.select(['tel'], { multiple: false });
-                    if (contacts.length > 0 && contacts[0].tel && contacts[0].tel.length > 0) {
-                        let cleanNum = contacts[0].tel[0].replace(/\D/g, '');
-                        if (cleanNum.length > 10) cleanNum = cleanNum.slice(-10);
-                        input.value = cleanNum;
-                    } else { alert("इस कांटेक्ट में कोई मोबाइल नंबर सेव नहीं है।"); }
-                } catch (ex) { console.log("Contact API Error:", ex); }
-            };
-        } else { contactBtn.style.display = 'none'; }
+        // 🌟 NAYA CODE: Contact बटन को हमेशा के लिए छिपा दें और Save का नाम 'Send' कर दें
+        if (contactBtn) contactBtn.style.display = 'none';
+        if (saveBtn) saveBtn.innerText = 'Send 💬';
 
         document.getElementById('promptSave').onclick = () => { modal.style.display = 'none'; resolve(input.value); };
+        // अगर Cancel दबाया है तो null भेजें ताकि कोई एक्शन न हो
         document.getElementById('promptCancel').onclick = () => { modal.style.display = 'none'; resolve(null); };
     });
 }
@@ -1031,51 +1021,49 @@ window.deleteCloudFile = async function (fileName) {
 
 window.shareCloudFile = async function (fileName) {
     try {
-        // 🌟 NAYA CODE: Storage से पूछने की बजाय सीधा अपनी मेमोरी (billLinks) से फ्री में लिंक उठाना
         let fileKey = fileName.replace("Bill_", "").replace(".pdf", "");
         let url = billLinks[fileKey];
 
-        if (!url) {
-            alert("बिल का लिंक नहीं मिला! कृपया ऊपर 'Sync Links' बटन दबाएं।");
-            return;
-        }
+        if (!url) { alert("बिल का लिंक नहीं मिला! कृपया ऊपर 'Sync Links' बटन दबाएं।"); return; }
 
         let billNoMatch = fileName.match(/SL_\d+/i);
-
-
-
         let billNo = billNoMatch ? billNoMatch[0].replace("_", "/") : "Bill";
 
         let mobile = await window.askMobileNumber(`Send ${billNo} via WhatsApp`);
-        if (!mobile) return;
-
-        mobile = mobile.replace(/\D/g, '');
-        if (mobile.length < 10) { alert("कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें।"); return; }
-        if (mobile.length > 10) mobile = mobile.slice(-10);
+        if (mobile === null) return; // अगर यूज़र ने Cancel दबा दिया, तो कुछ मत करो
 
         let msg = `नमस्ते,\n\nहमारी फर्म RAVI KUMAR DEEPAK KUMAR की तरफ से यह आपके बिल (*${billNo}*) की कॉपी है।\n\nकृपया नीचे दिए गए लिंक पर क्लिक करके अपना बिल डाउनलोड करें:\n\n🔗 *बिल की कॉपी:* ${url}\n\nधन्यवाद,\nRAVI KUMAR DEEPAK KUMAR`;
 
-        window.open("https://wa.me/91" + mobile + "?text=" + encodeURIComponent(msg));
+        // 🌟 NAYA CODE: खाली बॉक्स छोड़ने पर सीधा WhatsApp खोलें
+        if (mobile.trim() === "") {
+            window.open("https://wa.me/?text=" + encodeURIComponent(msg));
+        } else {
+            // अगर नंबर डाला है, तो उसे चेक करें और डायरेक्ट भेजें
+            mobile = mobile.replace(/\D/g, '');
+            if (mobile.length < 10) { alert("कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें या खाली छोड़कर Send दबाएं।"); return; }
+            if (mobile.length > 10) mobile = mobile.slice(-10);
+            window.open("https://wa.me/91" + mobile + "?text=" + encodeURIComponent(msg));
+        }
 
     } catch (e) {
         alert("बिल का लिंक जनरेट करने में कोई एरर आया!");
         console.error(e);
     }
 }
-
 window.shareSelectedCloudFiles = async function () {
     let checkboxes = document.querySelectorAll(".storage-chk:checked");
-    if (checkboxes.length === 0) {
-        alert("कृपया शेयर करने के लिए कम से कम एक बिल सेलेक्ट करें!");
-        return;
-    }
+    if (checkboxes.length === 0) { alert("कृपया शेयर करने के लिए कम से कम एक बिल सेलेक्ट करें!"); return; }
 
     let mobile = await window.askMobileNumber(`Send ${checkboxes.length} Bills via WhatsApp`);
-    if (!mobile) return;
+    if (mobile === null) return; // Cancel दबाया तो रुकें
 
-    mobile = mobile.replace(/\D/g, '');
-    if (mobile.length < 10) { alert("कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें।"); return; }
-    if (mobile.length > 10) mobile = mobile.slice(-10);
+    // 🌟 चेक करें कि क्या बॉक्स खाली है?
+    let isSpecificNumber = mobile.trim() !== "";
+    if (isSpecificNumber) {
+        mobile = mobile.replace(/\D/g, '');
+        if (mobile.length < 10) { alert("कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें या खाली छोड़कर Send दबाएं।"); return; }
+        if (mobile.length > 10) mobile = mobile.slice(-10);
+    }
 
     let btn = document.getElementById("bulkShareBtn");
     let originalText = btn.innerHTML;
@@ -1083,32 +1071,22 @@ window.shareSelectedCloudFiles = async function () {
     btn.disabled = true;
 
     try {
-
-
-
-
         if (checkboxes.length === 1) {
             let fileName = checkboxes[0].value;
-
-            // 🌟 NAYA CODE: यहाँ भी Storage की जगह सीधा मेमोरी से फ्री लिंक उठाएं
             let fileKey = fileName.replace("Bill_", "").replace(".pdf", "");
             let url = billLinks[fileKey];
 
-            if (!url) {
-                alert("लिंक नहीं मिला! कृपया 'Sync Links' बटन दबाएं।");
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                return;
-            }
-
-
-
+            if (!url) { alert("लिंक नहीं मिला! कृपया 'Sync Links' बटन दबाएं।"); btn.innerHTML = originalText; btn.disabled = false; return; }
 
             let billNoMatch = fileName.match(/SL_\d+/i);
             let billNo = billNoMatch ? billNoMatch[0].replace("_", "/") : "Bill";
 
             let msg = `नमस्ते,\n\nहमारी फर्म RAVI KUMAR DEEPAK KUMAR की तरफ से यह आपके बिल (*${billNo}*) की कॉपी है।\n\nकृपया नीचे दिए गए लिंक पर क्लिक करके अपना बिल डाउनलोड करें:\n\n🔗 *बिल की कॉपी:* ${url}\n\nधन्यवाद,\nRAVI KUMAR DEEPAK KUMAR`;
-            window.open("https://wa.me/91" + mobile + "?text=" + encodeURIComponent(msg));
+
+            // 🌟 NAYA CODE: नंबर है तो डायरेक्ट, वरना जनरल WhatsApp
+            if (isSpecificNumber) window.open("https://wa.me/91" + mobile + "?text=" + encodeURIComponent(msg));
+            else window.open("https://wa.me/?text=" + encodeURIComponent(msg));
+
         } else {
             const { PDFDocument } = window.PDFLib;
             const mergedPdf = await PDFDocument.create();
@@ -1132,23 +1110,22 @@ window.shareSelectedCloudFiles = async function () {
             }
 
             btn.innerHTML = "⏳ Uploading Link...";
-
             const mergedPdfBytes = await mergedPdf.save();
             let secureCode = Math.random().toString(36).substring(2, 10);
             let mergedFileName = `Merged_${billNumbers.length}_Bills_${secureCode}.pdf`;
             const mergedFileRef = storageRef(storage, `merged_bills/${mergedFileName}`);
 
             btn.innerHTML = "⏳ Uploading...";
-            // 🌟 NAYA CODE: मर्ज की गई फाइल को भी PDF के रूप में सेट करें
             const metadata = { contentType: 'application/pdf' };
             await uploadBytes(mergedFileRef, mergedPdfBytes, metadata);
-
             const mergedUrl = await getDownloadURL(mergedFileRef);
 
             let billsListText = billNumbers.join(", ");
             let msg = `नमस्ते,\n\nहमारी फर्म RAVI KUMAR DEEPAK KUMAR की तरफ से यह आपके *${checkboxes.length} बिलों* की संयुक्त (Combined) कॉपी है।\n*(बिल नं: ${billsListText})*\n\nकृपया नीचे दिए गए लिंक पर क्लिक करके सभी बिल एक ही PDF फाइल में प्राप्त करें:\n\n🔗 *सभी बिलों की कॉपी:* ${mergedUrl}\n\nधन्यवाद,\nRAVI KUMAR DEEPAK KUMAR`;
 
-            window.open("https://wa.me/91" + mobile + "?text=" + encodeURIComponent(msg));
+            // 🌟 NAYA CODE: नंबर है तो डायरेक्ट, वरना जनरल WhatsApp
+            if (isSpecificNumber) window.open("https://wa.me/91" + mobile + "?text=" + encodeURIComponent(msg));
+            else window.open("https://wa.me/?text=" + encodeURIComponent(msg));
         }
     } catch (error) {
         console.error("Bulk Share Merge Error: ", error);
@@ -1158,7 +1135,6 @@ window.shareSelectedCloudFiles = async function () {
         btn.disabled = false;
     }
 }
-
 window.cleanTempBills = async function () {
     if (!confirm("क्या आप WhatsApp पर शेयर की गई सभी Temporary (Merged) फाइलों को डिलीट करना चाहते हैं? (इससे आपके असली बिल्स सुरक्षित रहेंगे)")) return;
 
