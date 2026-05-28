@@ -18,31 +18,48 @@ const db = getDatabase(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
 
-// 🌟 NAYA CODE: Mobile UI को एकदम असली App जैसा बनाने के लिए 🌟
+// 🌟 NAYA CODE: Mobile UI को एकदम असली App कार्ड जैसा बनाने के लिए 🌟
 const mobileStyle = document.createElement('style');
 mobileStyle.innerHTML = `
   @media (max-width: 768px) {
-    /* 1 & 5. फालतू कॉलम छिपाएं (Select और Delete) */
     .hide-on-mobile { display: none !important; }
 
-    /* 4. Bill No और Date को एक ही लाइन में आमने-सामने लाएं */
-    #storageTableBody td.mobile-inline {
-        display: inline-block !important;
-        width: 48% !important;
-        border-bottom: none !important;
-        padding-top: 12px !important;
-        padding-bottom: 5px !important;
+    /* Row को एक स्मार्ट कार्ड (Flexbox) में बदलें */
+    #storageTableBody tr {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        padding: 12px 10px !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        border-bottom: 1px solid #ddd !important;
     }
-    #storageTableBody td.mobile-inline::before { display: none !important; } /* लेबल छिपाएं */
-    .right-align { text-align: right !important; }
 
-    /* 1 & 3. View/Share/Download को एक लाइन में सेट करें बिना लेबल के */
-    #storageTableBody td.mobile-actions {
-        padding-top: 5px !important;
-        padding-bottom: 15px !important;
-        border-top: none !important;
+    /* टेबल के पुराने लेबल्स को पूरी तरह छिपाएं */
+    #storageTableBody td::before { content: none !important; display: none !important; }
+    
+    #storageTableBody td {
+        border: none !important;
+        padding: 4px 0 !important;
+        display: block !important;
     }
-    #storageTableBody td.mobile-actions::before { display: none !important; } /* 'View & Share' लेबल हटाएँ */
+
+    /* Bill No. और Date को आमने-सामने सेट करें */
+    #storageTableBody td.mobile-inline {
+        width: auto !important;
+        flex: 1 !important;
+    }
+    
+    #storageTableBody td.right-align {
+        text-align: right !important;
+    }
+
+    /* बटनों की लाइन को पूरी जगह दें */
+    #storageTableBody td.mobile-actions {
+        width: 100% !important;
+        flex-basis: 100% !important;
+        margin-top: 10px !important;
+        padding-bottom: 0 !important;
+    }
   }
 `;
 document.head.appendChild(mobileStyle);
@@ -848,28 +865,29 @@ window.filterAndSortStorage = function () {
         tr.addEventListener('contextmenu', (e) => { if (e.target.tagName !== 'BUTTON') e.preventDefault(); }); // लॉन्ग प्रेस पर मेन्यू न खुले
 
         // HTML डिज़ाइन (क्लास के साथ)
+        // HTML डिज़ाइन (बिना टूटने वाले कोड के साथ)
         tr.innerHTML = `
-          <td data-label="Select" class="hide-on-mobile" style="text-align: center;">
+          <td class="hide-on-mobile" style="text-align: center;">
             <input type="checkbox" class="storage-chk" value="${fileName}" onchange="this.closest('tr').style.background = this.checked ? '#d1ecf1' : '${rowBg}'; toggleDeleteVisibility();" style="width:18px; height:18px; cursor:pointer;">
           </td>
           
-          <td data-label="Bill No." class="mobile-inline" style="word-break: break-word;">
+          <td class="mobile-inline" style="white-space: nowrap;">
             <strong style="color: #0b79d0; font-size: 15px;">🧾 ${displayBillNo}</strong> ${dupBadge}
           </td>
           
-          <td data-label="Date" class="mobile-inline right-align" style="color: #555; font-size: 14px; white-space: nowrap;">
+          <td class="mobile-inline right-align" style="color: #555; font-size: 14px; white-space: nowrap;">
             📅 ${displayDate}
           </td>
           
-          <td data-label="" class="mobile-actions" style="text-align: center;">
-            <div style="display: flex; gap: 6px; justify-content: space-between; width: 100%;">
-                <button onclick="viewCloudFile('${fileName}')" style="background:#f0f0f0; color:#0b79d0; border:1px solid #ccc; padding: 6px; border-radius: 4px; flex: 1; font-weight: bold; font-size: 13px;" title="View Bill">👁️ View</button>
-                <button onclick="shareCloudFile('${fileName}')" style="background:#25D366; color:white; border:none; padding: 6px; border-radius: 4px; flex: 1; font-weight: bold; font-size: 13px;" title="Send to WhatsApp">💬 Share</button>
-                <button onclick="downloadCloudFile('${fileName}')" style="background:#ffc107; color:#333; border:none; padding: 6px; border-radius: 4px; flex: 1; font-weight: bold; font-size: 13px;" title="Download Bill">⬇️ Down</button>
+          <td class="mobile-actions" style="text-align: center;">
+            <div style="display: flex; gap: 8px; justify-content: space-between; width: 100%;">
+                <button onclick="viewCloudFile('${fileName}')" style="background:#f0f0f0; color:#0b79d0; border:1px solid #ccc; padding: 8px 4px; border-radius: 4px; flex: 1; font-weight: bold; font-size: 13px;" title="View Bill">👁️ View</button>
+                <button onclick="shareCloudFile('${fileName}')" style="background:#25D366; color:white; border:none; padding: 8px 4px; border-radius: 4px; flex: 1; font-weight: bold; font-size: 13px;" title="Send to WhatsApp">💬 Share</button>
+                <button onclick="downloadCloudFile('${fileName}')" style="background:#ffc107; color:#333; border:none; padding: 8px 4px; border-radius: 4px; flex: 1; font-weight: bold; font-size: 13px;" title="Download Bill">⬇️ Down</button>
             </div>
           </td>
           
-          <td data-label="Action" class="hide-on-mobile" style="text-align: center;">
+          <td class="hide-on-mobile" style="text-align: center;">
             <button class="btn-danger" style="padding: 6px 12px; border-radius: 4px;" onclick="deleteCloudFile('${fileName}')">🗑️ Delete</button>
           </td>
         `;
