@@ -18,6 +18,34 @@ const db = getDatabase(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
 
+// 🌟 NAYA CODE: Mobile UI को एकदम असली App जैसा बनाने के लिए 🌟
+const mobileStyle = document.createElement('style');
+mobileStyle.innerHTML = `
+  @media (max-width: 768px) {
+    /* 1 & 5. फालतू कॉलम छिपाएं (Select और Delete) */
+    .hide-on-mobile { display: none !important; }
+
+    /* 4. Bill No और Date को एक ही लाइन में आमने-सामने लाएं */
+    #storageTableBody td.mobile-inline {
+        display: inline-block !important;
+        width: 48% !important;
+        border-bottom: none !important;
+        padding-top: 12px !important;
+        padding-bottom: 5px !important;
+    }
+    #storageTableBody td.mobile-inline::before { display: none !important; } /* लेबल छिपाएं */
+    .right-align { text-align: right !important; }
+
+    /* 1 & 3. View/Share/Download को एक लाइन में सेट करें बिना लेबल के */
+    #storageTableBody td.mobile-actions {
+        padding-top: 5px !important;
+        padding-bottom: 15px !important;
+        border-top: none !important;
+    }
+    #storageTableBody td.mobile-actions::before { display: none !important; } /* 'View & Share' लेबल हटाएँ */
+  }
+`;
+document.head.appendChild(mobileStyle);
 
 let partyMaster = {};
 let brokerMaster = {};
@@ -774,60 +802,80 @@ window.filterAndSortStorage = function () {
         toggleDeleteVisibility();
         return;
     }
-    // 🌟 NAYA CODE: 100% Error-Free Rendering 🌟
+    // 🌟 NAYA CODE: Long Press और Smart Mobile Layout 🌟
     filtered.forEach(fileObj => {
         let fileName = fileObj.name;
-
-        // डुप्लीकेट चेक करने के लिए
         let baseName = fileName.match(/SL_\d+(_\d{2}-\d{2}-\d{4})?/i)?.[0] || fileName;
         let isDuplicate = baseCounts[baseName] > 1;
 
-        // बिल नंबर और तारीख सेट करना
         let displayBillNo = "Bill";
         let displayDate = "-";
 
         let billMatch = fileName.match(/SL_(\d+)/i);
         if (billMatch) displayBillNo = `SL/${billMatch[1]}`;
-
         let dateMatch = fileName.match(/_(\d{2}-\d{2}-\d{4})_/);
         if (dateMatch) displayDate = dateMatch[1];
 
-        // डिज़ाइन और कलर सेट करना
         let rowBg = isDuplicate ? "#ffebee" : "#fff";
         let dupBadge = isDuplicate ? `<span style="background: #d9534f; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 10px;">⚠️ Duplicate</span>` : "";
 
-        // 🌟 यही लाइन मिसिंग थी जिससे एरर आ रहा था!
         let tr = document.createElement("tr");
         tr.style.background = rowBg;
+        tr.style.userSelect = "none"; // Text copy होने से रोकेगा ताकि Long Press काम करे
+        tr.style.WebkitUserSelect = "none";
+        tr.style.transition = "background 0.3s";
 
-        // टेबल में 5 अलग-अलग कॉलम बनाना
+        // 🌟 Long Press का जादू 🌟
+        let pressTimer;
+        const startPress = (e) => {
+            if (e.target.tagName === 'BUTTON') return; // बटन दबाने पर सेलेक्ट न हो
+            pressTimer = setTimeout(() => {
+                let chk = tr.querySelector('.storage-chk');
+                chk.checked = !chk.checked;
+                tr.style.background = chk.checked ? "#d1ecf1" : rowBg; // सेलेक्ट होने पर हल्का नीला रंग
+                toggleDeleteVisibility();
+                if (navigator.vibrate) navigator.vibrate(50); // सेलेक्ट होने पर मोबाइल वाइब्रेट करेगा 📳
+            }, 500); // 0.5 सेकंड दबाकर रखने पर
+        };
+        const cancelPress = () => clearTimeout(pressTimer);
+
+        tr.addEventListener('touchstart', startPress);
+        tr.addEventListener('touchend', cancelPress);
+        tr.addEventListener('touchmove', cancelPress);
+        tr.addEventListener('mousedown', startPress); // लैपटॉप पर माउस दबाए रखने के लिए
+        tr.addEventListener('mouseup', cancelPress);
+        tr.addEventListener('mouseleave', cancelPress);
+        tr.addEventListener('contextmenu', (e) => { if (e.target.tagName !== 'BUTTON') e.preventDefault(); }); // लॉन्ग प्रेस पर मेन्यू न खुले
+
+        // HTML डिज़ाइन (क्लास के साथ)
         tr.innerHTML = `
-          <td data-label="Select" style="text-align: center;">
-            <input type="checkbox" class="storage-chk" value="${fileName}" onchange="toggleDeleteVisibility()" style="width:18px; height:18px; cursor:pointer;">
+          <td data-label="Select" class="hide-on-mobile" style="text-align: center;">
+            <input type="checkbox" class="storage-chk" value="${fileName}" onchange="this.closest('tr').style.background = this.checked ? '#d1ecf1' : '${rowBg}'; toggleDeleteVisibility();" style="width:18px; height:18px; cursor:pointer;">
           </td>
-          <td data-label="Bill No." style="word-break: break-word;">
+          
+          <td data-label="Bill No." class="mobile-inline" style="word-break: break-word;">
             <strong style="color: #0b79d0; font-size: 15px;">🧾 ${displayBillNo}</strong> ${dupBadge}
           </td>
-          <td data-label="Date" style="color: #555; font-size: 14px; white-space: nowrap;">
+          
+          <td data-label="Date" class="mobile-inline right-align" style="color: #555; font-size: 14px; white-space: nowrap;">
             📅 ${displayDate}
           </td>
-      <td data-label="View & Share" style="text-align: center;">
-            <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center;">
-                <button onclick="viewCloudFile('${fileName}')" style="background:#f0f0f0; color:#0b79d0; border:1px solid #ccc; padding: 6px 10px; border-radius: 4px; cursor:pointer; flex: 1; min-width: 80px;" title="View Bill">👁️ View</button>
-                <button onclick="shareCloudFile('${fileName}')" style="background:#25D366; color:white; border:none; padding: 6px 10px; border-radius: 4px; cursor:pointer; flex: 1; min-width: 80px;" title="Send to WhatsApp">💬 Share</button>
-                <button onclick="downloadCloudFile('${fileName}')" style="background:#ffc107; color:#333; border:none; padding: 6px 10px; border-radius: 4px; cursor:pointer; flex: 1; min-width: 100px;" title="Download Bill">⬇️ Download</button>
+          
+          <td data-label="" class="mobile-actions" style="text-align: center;">
+            <div style="display: flex; gap: 6px; justify-content: space-between; width: 100%;">
+                <button onclick="viewCloudFile('${fileName}')" style="background:#f0f0f0; color:#0b79d0; border:1px solid #ccc; padding: 6px; border-radius: 4px; flex: 1; font-weight: bold; font-size: 13px;" title="View Bill">👁️ View</button>
+                <button onclick="shareCloudFile('${fileName}')" style="background:#25D366; color:white; border:none; padding: 6px; border-radius: 4px; flex: 1; font-weight: bold; font-size: 13px;" title="Send to WhatsApp">💬 Share</button>
+                <button onclick="downloadCloudFile('${fileName}')" style="background:#ffc107; color:#333; border:none; padding: 6px; border-radius: 4px; flex: 1; font-weight: bold; font-size: 13px;" title="Download Bill">⬇️ Down</button>
             </div>
           </td>
-          <td data-label="Action" class="actions" style="text-align: center;">
-            <div style="display: flex; justify-content: center;">
-                <button class="btn-danger" style="padding: 6px 12px; border-radius: 4px; width: 100%; max-width: 200px;" onclick="deleteCloudFile('${fileName}')">🗑️ Delete</button>
-            </div>
+          
+          <td data-label="Action" class="hide-on-mobile" style="text-align: center;">
+            <button class="btn-danger" style="padding: 6px 12px; border-radius: 4px;" onclick="deleteCloudFile('${fileName}')">🗑️ Delete</button>
           </td>
         `;
 
         tbody.appendChild(tr);
     });
-
     document.getElementById("selectAllStorage").checked = false;
     toggleDeleteVisibility();
 }
