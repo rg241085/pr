@@ -760,47 +760,61 @@ window.filterAndSortStorage = function () {
         let baseName = fileName.match(/SL_\d+(_\d{2}-\d{2}-\d{4})?/i)?.[0] || fileName;
         let isDuplicate = baseCounts[baseName] > 1;
 
-        // 🌟 NAYA CODE: Pending aur Paid bills ko alag-alag pehchan-na 🌟
+        // 🌟 NAYA CODE: बिल नंबर + तारीख दोनों को मिलाकर एकदम पक्का (100% Accurate) मैच करना 🌟
         let displayBillNo = "Bill";
         let displayDate = "";
         let displayParty = "";
         let displayAmount = "";
-        let isPending = false; // Check karne ke liye ki bill baki hai ya nahi
+        let isPending = false;
 
-        // SL नंबर निकालना
+        // PDF के नाम से बिल नंबर और तारीख निकालना
         let billMatch = fileName.match(/SL_(\d+)/i);
-        if (billMatch) {
-            displayBillNo = `SL/${billMatch[1]}`;
+        let dateMatch = fileName.match(/_(\d{2}-\d{2}-\d{4})_/);
 
-            // 🔍 Bill Number ko CSV wale billData mein dhoondhna
-            if (billData && billData.length > 0) {
-                let foundBill = billData.find(b => b.bill && (b.bill.toUpperCase() === displayBillNo.toUpperCase() || b.bill.endsWith(billMatch[1])));
-                if (foundBill) {
-                    displayParty = escapeHtml(foundBill.party);
-                    displayAmount = `₹${foundBill.amount}`;
-                    isPending = true; // Bill mil gaya, matlab payment baki hai
+        let pdfBillNum = billMatch ? parseInt(billMatch[1], 10) : null;
+        let pdfDateStr = dateMatch ? dateMatch[1] : null; // जैसे: "22-05-2026"
+
+        if (pdfBillNum !== null) displayBillNo = `SL/${billMatch[1]}`;
+        if (pdfDateStr !== null) displayDate = ` (📅 ${pdfDateStr})`;
+
+        // 🔍 CSV के डेटा में पक्का मिलान (Strict Matching) करना
+        if (pdfBillNum !== null && billData && billData.length > 0) {
+            let foundBill = billData.find(b => {
+                // 1. बिल नंबर का मिलान (CSV में चाहे SL/429 हो या 00429, यह सिर्फ असली नंबर निकालेगा)
+                let csvNumMatch = b.bill ? b.bill.match(/\d+$/) : null;
+                let csvBillNum = csvNumMatch ? parseInt(csvNumMatch[0], 10) : null;
+                let isNumMatch = (csvBillNum === pdfBillNum);
+
+                // 2. तारीख का मिलान (यह बहुत ज़रूरी है ताकि पिछले साल के बिल न टकराएं!)
+                let isDateMatch = true;
+                if (pdfDateStr && b.date) {
+                    // CSV में तारीख "22/05/2026" हो सकती है, उसे "-" में बदलकर PDF से मिलाना
+                    let cleanCsvDate = b.date.replace(/\//g, "-").trim();
+                    isDateMatch = (cleanCsvDate === pdfDateStr);
                 }
+
+                return isNumMatch && isDateMatch; // जब नंबर और तारीख दोनों मैच होंगे, तभी पास करेगा!
+            });
+
+            if (foundBill) {
+                displayParty = escapeHtml(foundBill.party);
+                displayAmount = `₹${foundBill.amount}`;
+                isPending = true; // दोनों मैच हो गए, मतलब पेमेंट बाकी है
             }
         }
 
-        // तारीख निकालना
-        let dateMatch = fileName.match(/_(\d{2}-\d{2}-\d{4})_/);
-        if (dateMatch) displayDate = ` (📅 ${dateMatch[1]})`;
-
-        // 🌟 Smart Labeling: Pending hai ya Paid?
+        // 🌟 Smart Labeling: Pending है या Paid?
         let extraInfoHtml = "";
         if (isPending) {
-            // Agar CSV mein hai, toh Party ka naam aur Amount dikhao
             extraInfoHtml = `<br><span style="font-size: 13px; color: #555;">👤 ${displayParty} &nbsp;|&nbsp; <span style="color:#d9534f;">🔴 Pending: <strong>${displayAmount}</strong></span></span>`;
         } else {
-            // Agar CSV mein nahi hai, toh Paid (History) dikhao
             extraInfoHtml = `<br><span style="font-size: 13px; color: #28a745;">✅ Paid / Cleared (History)</span>`;
         }
 
         // स्क्रीन पर दिखाने के लिए फाइनल डिज़ाइन
         let cleanDisplayName = `
             <div style="line-height: 1.4;">
-                <span style="font-size: 15px; color: #0b79d0;">🧾 <strong>${displayBillNo}</strong> ${displayDate}</span>${extraInfoHtml}
+                <span style="font-size: 15px; color: #0b79d0;">🧾 <strong>${displayBillNo}</strong>${displayDate}</span>${extraInfoHtml}
             </div>
         `;
 
