@@ -811,13 +811,17 @@ window.filterAndSortStorage = function () {
           <td data-label="Date" style="color: #555; font-size: 14px; white-space: nowrap;">
             📅 ${displayDate}
           </td>
-        <td data-label="View & Share" style="white-space: nowrap; text-align: center;">
-            <button onclick="viewCloudFile('${fileName}')" style="background:#f0f0f0; color:#0b79d0; border:1px solid #ccc; padding: 6px 10px; border-radius: 4px; cursor:pointer;" title="View Bill">👁️ View</button>
-            <button onclick="shareCloudFile('${fileName}')" style="background:#25D366; color:white; border:none; padding: 6px 10px; border-radius: 4px; cursor:pointer; margin-left: 5px;" title="Send to WhatsApp">💬 Share</button>
-            <button onclick="downloadCloudFile('${fileName}')" style="background:#ffc107; color:#333; border:none; padding: 6px 10px; border-radius: 4px; cursor:pointer; margin-left: 5px;" title="Download Bill">⬇️ Download</button>
+      <td data-label="View & Share" style="text-align: center;">
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center;">
+                <button onclick="viewCloudFile('${fileName}')" style="background:#f0f0f0; color:#0b79d0; border:1px solid #ccc; padding: 6px 10px; border-radius: 4px; cursor:pointer; flex: 1; min-width: 80px;" title="View Bill">👁️ View</button>
+                <button onclick="shareCloudFile('${fileName}')" style="background:#25D366; color:white; border:none; padding: 6px 10px; border-radius: 4px; cursor:pointer; flex: 1; min-width: 80px;" title="Send to WhatsApp">💬 Share</button>
+                <button onclick="downloadCloudFile('${fileName}')" style="background:#ffc107; color:#333; border:none; padding: 6px 10px; border-radius: 4px; cursor:pointer; flex: 1; min-width: 100px;" title="Download Bill">⬇️ Download</button>
+            </div>
           </td>
-          <td data-label="Action" class="actions" style="white-space: nowrap; text-align: center;">
-            <button class="btn-danger" style="padding: 6px 12px; border-radius: 4px;" onclick="deleteCloudFile('${fileName}')">🗑️ Delete</button>
+          <td data-label="Action" class="actions" style="text-align: center;">
+            <div style="display: flex; justify-content: center;">
+                <button class="btn-danger" style="padding: 6px 12px; border-radius: 4px; width: 100%; max-width: 200px;" onclick="deleteCloudFile('${fileName}')">🗑️ Delete</button>
+            </div>
           </td>
         `;
 
