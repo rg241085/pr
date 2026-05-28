@@ -796,7 +796,6 @@ window.filterAndSortStorage = function () {
         let tr = document.createElement("tr");
         tr.style.background = rowBg;
 
-        // 🌟 HTML अपडेट: अब fileName की जगह cleanDisplayName दिखेगा 🌟
         tr.innerHTML = `
       <td data-label="Select" style="text-align: center;">
         <input type="checkbox" class="storage-chk" value="${fileName}" onchange="toggleDeleteVisibility()" style="width:18px; height:18px; cursor:pointer;">
@@ -804,7 +803,6 @@ window.filterAndSortStorage = function () {
       <td data-label="Bill Details" style="word-break: break-word;">
         <strong style="color: #0b79d0; font-size: 15px;">${cleanDisplayName}</strong> ${dupBadge}
       </td>
-      <td data-label="Upload Time" style="color: #555; font-size: 14px; white-space: nowrap;">☁️ ${uploadTime}</td>
       <td data-label="View & Share" style="white-space: nowrap; text-align: center;">
         <button onclick="viewCloudFile('${fileName}')" style="background:#f0f0f0; color:#0b79d0; border:1px solid #ccc; padding: 6px 10px; border-radius: 4px; cursor:pointer;" title="View Bill">👁️ View</button>
         <button onclick="shareCloudFile('${fileName}')" style="background:#25D366; color:white; border:none; padding: 6px 10px; border-radius: 4px; cursor:pointer; margin-left: 5px;" title="Send to WhatsApp">💬 Share</button>
