@@ -769,46 +769,54 @@ window.filterAndSortStorage = function () {
         toggleDeleteVisibility();
         return;
     }
+    // 🌟 NAYA CODE: 100% Error-Free Rendering 🌟
     filtered.forEach(fileObj => {
         let fileName = fileObj.name;
-        let uploadTime = fileObj.uploadTime;
+
+        // डुप्लीकेट चेक करने के लिए
         let baseName = fileName.match(/SL_\d+(_\d{2}-\d{2}-\d{4})?/i)?.[0] || fileName;
         let isDuplicate = baseCounts[baseName] > 1;
 
-        // 🌟 NAYA CODE: बिल नंबर और तारीख को अलग-अलग करना 🌟
+        // बिल नंबर और तारीख सेट करना
         let displayBillNo = "Bill";
-        let displayDate = "-"; // अगर तारीख नहीं मिलेगी तो '-' दिखाएगा
+        let displayDate = "-";
 
-        // SL नंबर निकालना
         let billMatch = fileName.match(/SL_(\d+)/i);
         if (billMatch) displayBillNo = `SL/${billMatch[1]}`;
 
-        // सिर्फ तारीख निकालना (ब्रैकेट हटा दिए हैं)
         let dateMatch = fileName.match(/_(\d{2}-\d{2}-\d{4})_/);
         if (dateMatch) displayDate = dateMatch[1];
 
-        // अब टेबल की Row में 2 अलग-अलग <td> (कॉलम) बनाएंगे
+        // डिज़ाइन और कलर सेट करना
+        let rowBg = isDuplicate ? "#ffebee" : "#fff";
+        let dupBadge = isDuplicate ? `<span style="background: #d9534f; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 10px;">⚠️ Duplicate</span>` : "";
+
+        // 🌟 यही लाइन मिसिंग थी जिससे एरर आ रहा था!
+        let tr = document.createElement("tr");
+        tr.style.background = rowBg;
+
+        // टेबल में 5 अलग-अलग कॉलम बनाना
         tr.innerHTML = `
-      <td data-label="Select" style="text-align: center;">
-        <input type="checkbox" class="storage-chk" value="${fileName}" onchange="toggleDeleteVisibility()" style="width:18px; height:18px; cursor:pointer;">
-      </td>
-      <td data-label="Bill No." style="word-break: break-word;">
-        <strong style="color: #0b79d0; font-size: 15px;">🧾 ${displayBillNo}</strong> ${dupBadge}
-      </td>
-      <td data-label="Date" style="color: #555; font-size: 14px; white-space: nowrap;">
-        📅 ${displayDate}
-      </td>
-      <td data-label="View & Share" style="white-space: nowrap; text-align: center;">
-        <button onclick="viewCloudFile('${fileName}')" style="background:#f0f0f0; color:#0b79d0; border:1px solid #ccc; padding: 6px 10px; border-radius: 4px; cursor:pointer;" title="View Bill">👁️ View</button>
-        <button onclick="shareCloudFile('${fileName}')" style="background:#25D366; color:white; border:none; padding: 6px 10px; border-radius: 4px; cursor:pointer; margin-left: 5px;" title="Send to WhatsApp">💬 Share</button>
-      </td>
-      <td data-label="Action" class="actions" style="white-space: nowrap; text-align: center;">
-        <button class="btn-danger" style="padding: 6px 12px; border-radius: 4px;" onclick="deleteCloudFile('${fileName}')">🗑️ Delete</button>
-      </td>
-    `;
+          <td data-label="Select" style="text-align: center;">
+            <input type="checkbox" class="storage-chk" value="${fileName}" onchange="toggleDeleteVisibility()" style="width:18px; height:18px; cursor:pointer;">
+          </td>
+          <td data-label="Bill No." style="word-break: break-word;">
+            <strong style="color: #0b79d0; font-size: 15px;">🧾 ${displayBillNo}</strong> ${dupBadge}
+          </td>
+          <td data-label="Date" style="color: #555; font-size: 14px; white-space: nowrap;">
+            📅 ${displayDate}
+          </td>
+          <td data-label="View & Share" style="white-space: nowrap; text-align: center;">
+            <button onclick="viewCloudFile('${fileName}')" style="background:#f0f0f0; color:#0b79d0; border:1px solid #ccc; padding: 6px 10px; border-radius: 4px; cursor:pointer;" title="View Bill">👁️ View</button>
+            <button onclick="shareCloudFile('${fileName}')" style="background:#25D366; color:white; border:none; padding: 6px 10px; border-radius: 4px; cursor:pointer; margin-left: 5px;" title="Send to WhatsApp">💬 Share</button>
+          </td>
+          <td data-label="Action" class="actions" style="white-space: nowrap; text-align: center;">
+            <button class="btn-danger" style="padding: 6px 12px; border-radius: 4px;" onclick="deleteCloudFile('${fileName}')">🗑️ Delete</button>
+          </td>
+        `;
+
         tbody.appendChild(tr);
     });
-
 
     document.getElementById("selectAllStorage").checked = false;
     toggleDeleteVisibility();
