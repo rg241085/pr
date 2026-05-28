@@ -900,12 +900,13 @@ window.deleteSelectedCloudFiles = async function () {
     }
 }
 window.viewCloudFile = function (fileName) {
-    // अब यह लिंक ढूँढने के लिए Cloud Storage में नहीं जाएगा, सीधे Database से लिंक उठा लेगा
     let fileKey = fileName.replace("Bill_", "").replace(".pdf", "");
     let url = billLinks[fileKey];
 
     if (url) {
-        window.open(url, "_blank"); // पलक झपकते ही बिल खुल जाएगा!
+        // 🌟 NAYA CODE: Google Viewer का इस्तेमाल करें ताकि मोबाइल पर भी बिना डाउनलोड हुए खुले
+        let viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+        window.open(viewerUrl, "_blank");
     } else {
         alert("बिल का लिंक नहीं मिला! कृपया ऊपर 'Sync Links' बटन दबाएं।");
     }
