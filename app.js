@@ -811,9 +811,10 @@ window.filterAndSortStorage = function () {
           <td data-label="Date" style="color: #555; font-size: 14px; white-space: nowrap;">
             📅 ${displayDate}
           </td>
-          <td data-label="View & Share" style="white-space: nowrap; text-align: center;">
+        <td data-label="View & Share" style="white-space: nowrap; text-align: center;">
             <button onclick="viewCloudFile('${fileName}')" style="background:#f0f0f0; color:#0b79d0; border:1px solid #ccc; padding: 6px 10px; border-radius: 4px; cursor:pointer;" title="View Bill">👁️ View</button>
             <button onclick="shareCloudFile('${fileName}')" style="background:#25D366; color:white; border:none; padding: 6px 10px; border-radius: 4px; cursor:pointer; margin-left: 5px;" title="Send to WhatsApp">💬 Share</button>
+            <button onclick="downloadCloudFile('${fileName}')" style="background:#ffc107; color:#333; border:none; padding: 6px 10px; border-radius: 4px; cursor:pointer; margin-left: 5px;" title="Download Bill">⬇️ Download</button>
           </td>
           <td data-label="Action" class="actions" style="white-space: nowrap; text-align: center;">
             <button class="btn-danger" style="padding: 6px 12px; border-radius: 4px;" onclick="deleteCloudFile('${fileName}')">🗑️ Delete</button>
@@ -909,6 +910,35 @@ window.viewCloudFile = function (fileName) {
         window.open(viewerUrl, "_blank");
     } else {
         alert("बिल का लिंक नहीं मिला! कृपया ऊपर 'Sync Links' बटन दबाएं।");
+    }
+}
+
+window.downloadCloudFile = async function (fileName) {
+    let fileKey = fileName.replace("Bill_", "").replace(".pdf", "");
+    let url = billLinks[fileKey];
+
+    if (!url) {
+        alert("बिल का लिंक नहीं मिला! कृपया ऊपर 'Sync Links' बटन दबाएं।");
+        return;
+    }
+
+    try {
+        // 🌟 NAYA CODE: बैकग्राउंड में फाइल Fetch करके उसे असली नाम से डाउनलोड करवाना
+        let response = await fetch(url);
+        let blob = await response.blob();
+        let blobUrl = window.URL.createObjectURL(blob);
+
+        let a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = fileName; // यह फाइल को उसी के असली नाम से मोबाइल/PC में सेव करेगा
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+        console.error("Download Error: ", e);
+        // अगर कोई मोबाइल ब्राउज़र Fetch ब्लॉक करे, तो सीधे लिंक खोल दें ताकि डाउनलोड हो जाए
+        window.open(url, "_blank");
     }
 }
 window.deleteCloudFile = async function (fileName) {
