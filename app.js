@@ -726,7 +726,22 @@ window.filterAndSortStorage = function () {
     let searchTerm = document.getElementById("storageSearchBox").value.toLowerCase();
     let tbody = document.getElementById("storageTableBody");
 
-    let filtered = allStorageFiles.filter(fileObj => fileObj.name.toLowerCase().includes(searchTerm));
+    // 🌟 NAYA CODE: सिर्फ पक्का (Exact) बिल नंबर सर्च करने के लिए 🌟
+    let filtered = allStorageFiles.filter(fileObj => {
+        if (!searchTerm) return true; // अगर बॉक्स खाली है, तो सब दिखाओ
+
+        let cleanSearch = searchTerm.trim();
+        let isStrictNumber = /^\d+$/.test(cleanSearch); // चेक करें कि क्या यूज़र ने सिर्फ नंबर टाइप किया है?
+
+        if (isStrictNumber) {
+            // अगर सिर्फ नंबर है, तो बिल नंबर का Exact Match करें (जैसे: 1 है तो सिर्फ 1 ही आएगा)
+            let billMatch = fileObj.name.match(/SL_(\d+)/i);
+            return billMatch && billMatch[1] === cleanSearch;
+        } else {
+            // अगर कोई तारीख (जैसे 22-05) टाइप की है, तो नॉर्मल सर्च करें
+            return fileObj.name.toLowerCase().includes(searchTerm);
+        }
+    });
     filtered.sort((a, b) => {
         let numA = parseInt(a.name.match(/SL_(\d+)/i)?.[1] || 0);
         let numB = parseInt(b.name.match(/SL_(\d+)/i)?.[1] || 0);
