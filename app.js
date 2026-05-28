@@ -760,20 +760,49 @@ window.filterAndSortStorage = function () {
         let baseName = fileName.match(/SL_\d+(_\d{2}-\d{2}-\d{4})?/i)?.[0] || fileName;
         let isDuplicate = baseCounts[baseName] > 1;
 
-        // 🌟 NAYA CODE: फाइल के गंदे नाम में से साफ़ 'बिल नंबर' और 'तारीख' निकालना 🌟
+        // 🌟 NAYA CODE: Pending aur Paid bills ko alag-alag pehchan-na 🌟
         let displayBillNo = "Bill";
         let displayDate = "";
+        let displayParty = "";
+        let displayAmount = "";
+        let isPending = false; // Check karne ke liye ki bill baki hai ya nahi
 
-        // SL नंबर निकालना (जैसे: 429)
+        // SL नंबर निकालना
         let billMatch = fileName.match(/SL_(\d+)/i);
-        if (billMatch) displayBillNo = `SL/${billMatch[1]}`;
+        if (billMatch) {
+            displayBillNo = `SL/${billMatch[1]}`;
 
-        // तारीख निकालना (जैसे: 22-05-2026)
+            // 🔍 Bill Number ko CSV wale billData mein dhoondhna
+            if (billData && billData.length > 0) {
+                let foundBill = billData.find(b => b.bill && (b.bill.toUpperCase() === displayBillNo.toUpperCase() || b.bill.endsWith(billMatch[1])));
+                if (foundBill) {
+                    displayParty = escapeHtml(foundBill.party);
+                    displayAmount = `₹${foundBill.amount}`;
+                    isPending = true; // Bill mil gaya, matlab payment baki hai
+                }
+            }
+        }
+
+        // तारीख निकालना
         let dateMatch = fileName.match(/_(\d{2}-\d{2}-\d{4})_/);
         if (dateMatch) displayDate = ` (📅 ${dateMatch[1]})`;
 
-        // स्क्रीन पर दिखाने के लिए सुंदर नाम तैयार करना
-        let cleanDisplayName = `🧾 ${displayBillNo} ${displayDate}`;
+        // 🌟 Smart Labeling: Pending hai ya Paid?
+        let extraInfoHtml = "";
+        if (isPending) {
+            // Agar CSV mein hai, toh Party ka naam aur Amount dikhao
+            extraInfoHtml = `<br><span style="font-size: 13px; color: #555;">👤 ${displayParty} &nbsp;|&nbsp; <span style="color:#d9534f;">🔴 Pending: <strong>${displayAmount}</strong></span></span>`;
+        } else {
+            // Agar CSV mein nahi hai, toh Paid (History) dikhao
+            extraInfoHtml = `<br><span style="font-size: 13px; color: #28a745;">✅ Paid / Cleared (History)</span>`;
+        }
+
+        // स्क्रीन पर दिखाने के लिए फाइनल डिज़ाइन
+        let cleanDisplayName = `
+            <div style="line-height: 1.4;">
+                <span style="font-size: 15px; color: #0b79d0;">🧾 <strong>${displayBillNo}</strong> ${displayDate}</span>${extraInfoHtml}
+            </div>
+        `;
 
         let rowBg = isDuplicate ? "#ffebee" : "#fff";
         let dupBadge = isDuplicate ? `<span style="background: #d9534f; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 10px;">⚠️ Duplicate</span>` : "";
