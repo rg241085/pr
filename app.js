@@ -22,7 +22,10 @@ const auth = getAuth(app);
 const mobileStyle = document.createElement('style');
 mobileStyle.innerHTML = `
   @media (max-width: 768px) {
-    .hide-on-mobile { display: none !important; }
+    /* 🚨 FIX: इसे सुपर-पावर दे दी गई है ताकि यह सच में गायब हो जाए */
+    #storageTableBody td.hide-on-mobile { 
+        display: none !important; 
+    }
 
     /* Row को एक स्मार्ट कार्ड (Flexbox) में बदलें */
     #storageTableBody tr {
@@ -40,7 +43,7 @@ mobileStyle.innerHTML = `
     #storageTableBody td {
         border: none !important;
         padding: 4px 0 !important;
-        display: block !important;
+        display: block !important; 
     }
 
     /* Bill No. और Date को आमने-सामने सेट करें */
