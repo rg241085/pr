@@ -775,33 +775,28 @@ window.filterAndSortStorage = function () {
         let baseName = fileName.match(/SL_\d+(_\d{2}-\d{2}-\d{4})?/i)?.[0] || fileName;
         let isDuplicate = baseCounts[baseName] > 1;
 
-        // 🌟 NAYA CODE: फाइल के गंदे नाम में से साफ़ 'बिल नंबर' और 'तारीख' निकालना 🌟
+        // 🌟 NAYA CODE: बिल नंबर और तारीख को अलग-अलग करना 🌟
         let displayBillNo = "Bill";
-        let displayDate = "";
+        let displayDate = "-"; // अगर तारीख नहीं मिलेगी तो '-' दिखाएगा
 
-        // SL नंबर निकालना (जैसे: 429)
+        // SL नंबर निकालना
         let billMatch = fileName.match(/SL_(\d+)/i);
         if (billMatch) displayBillNo = `SL/${billMatch[1]}`;
 
-        // तारीख निकालना (जैसे: 22-05-2026)
+        // सिर्फ तारीख निकालना (ब्रैकेट हटा दिए हैं)
         let dateMatch = fileName.match(/_(\d{2}-\d{2}-\d{4})_/);
-        if (dateMatch) displayDate = ` (📅 ${dateMatch[1]})`;
+        if (dateMatch) displayDate = dateMatch[1];
 
-        // स्क्रीन पर दिखाने के लिए सुंदर और सिंपल नाम तैयार करना
-        let cleanDisplayName = `🧾 ${displayBillNo} ${displayDate}`;
-
-        let rowBg = isDuplicate ? "#ffebee" : "#fff";
-        let dupBadge = isDuplicate ? `<span style="background: #d9534f; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 10px;">⚠️ Duplicate</span>` : "";
-
-        let tr = document.createElement("tr");
-        tr.style.background = rowBg;
-
+        // अब टेबल की Row में 2 अलग-अलग <td> (कॉलम) बनाएंगे
         tr.innerHTML = `
       <td data-label="Select" style="text-align: center;">
         <input type="checkbox" class="storage-chk" value="${fileName}" onchange="toggleDeleteVisibility()" style="width:18px; height:18px; cursor:pointer;">
       </td>
-      <td data-label="Bill Details" style="word-break: break-word;">
-        <strong style="color: #0b79d0; font-size: 15px;">${cleanDisplayName}</strong> ${dupBadge}
+      <td data-label="Bill No." style="word-break: break-word;">
+        <strong style="color: #0b79d0; font-size: 15px;">🧾 ${displayBillNo}</strong> ${dupBadge}
+      </td>
+      <td data-label="Date" style="color: #555; font-size: 14px; white-space: nowrap;">
+        📅 ${displayDate}
       </td>
       <td data-label="View & Share" style="white-space: nowrap; text-align: center;">
         <button onclick="viewCloudFile('${fileName}')" style="background:#f0f0f0; color:#0b79d0; border:1px solid #ccc; padding: 6px 10px; border-radius: 4px; cursor:pointer;" title="View Bill">👁️ View</button>
